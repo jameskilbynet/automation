@@ -1,0 +1,58 @@
+{
+    "Default": {
+        "Path":"C:\\",
+        "ChefPath":"C:\\veeam_standalone_full\\",
+        "TFOutputVBR":"C:\\vbr_ip.json"
+    },
+    "LinuxRepo": {
+            "VBRServer":"localhost",
+            "IpAddress":"",
+            "Username": "centos",
+            "Key":"C:\\AWS-KEY.pem",
+            "RepoName":"AWS-US-1-REPO-01",
+            "RepoFolder":"/home/repo01"
+        },
+    "VCCProvider": {
+            "VBRServer":"VBRSERVER",
+            "vCenterServer":"VCENTER",
+            "vCenterDVS":"LAB-DVS-00",
+            "vCenterPortGroup":"VM-Management",
+            "vCenterDatastore":"HDD-1",
+            "vCenterResPool":"SDDC",
+            "ESXiHost":"ESXIHOST",
+            "CCUserName":"VCC_USERNAME",
+            "CCPassword":"xxxxxxxx",
+            "CCServerAddress":"VCCADDRESS",
+            "CCRepoName":"VCC_USERNAME",
+            "CCPort":"6180",
+            "NEAIPAddress":"192.168.1.239",
+            "NEASubnetMask":"255.255.255.0",
+            "NEAGateway":"192.168.1.254"
+        },
+    "VBRCredentials": {
+            "VBRServer":"VBRSERVER",
+            "Username":"USERNAME",
+            "Password":"PASSWORD"
+        },
+    "VMCCredentials": {
+            "vCenter":"VCENTER",
+            "Username":"USERNAME",
+            "Password":"PASSWORD"
+        },
+    "VBRJobDetails": {
+            "DefaultRepo1":"Default Backup Repository",
+            "Job1":"CCR-01",
+            "Job2":"CCB-02",    
+            "Job3":"CCB-03",
+            "TagCatagory1":"Backup",
+            "TagCatagory2":"Replication",
+            "Tag1":"TIER-1",
+            "Tag2":"TIER-2",
+            "Tag3":"TIER-3",
+            "FullDay":"Friday",
+            "Time1":"22:00",
+            "Time2":"02:00",
+            "RestorePoints1":"7",
+            "RestorePoints2":"30"
+        }
+}
