@@ -59,31 +59,27 @@ All of the variables are configured in the config.json file. Nothing is required
                         "RepoFolder":"/home/repo01"
                 },
         "VCCProvider": {
-                        "VBRServer":"172.17.0.229",
-                        "vCenterServer":"lab-vc-01.sliema.lab",
+                        "VBRServer":"VBRSERVER",
+                        "vCenterServer":"VCENTER",
                         "vCenterDVS":"LAB-DVS-00",
                         "vCenterPortGroup":"VM-Management",
                         "vCenterDatastore":"HDD-1",
                         "vCenterResPool":"SDDC",
-                        "ESXiHost":"lab-node-01.sliema.lab",
-                        "CCUserName":"VCC_1155136",
-                        "CCPassword":"x6dxUx%ixa",
-                        "CCServerAddress":"veeam.syd.zettagrid.com",
-                        "CCRepoName":"VCC_1155136",
-                        "CCPort":"6180",
-                        "NEAIPAddress":"192.168.1.239",
-                        "NEASubnetMask":"255.255.255.0",
-                        "NEAGateway":"192.168.1.254"
+                        "ESXiHost":"ESXIHOST",
+                        "CCUserName":"VCC_USERNAME",
+                        "CCPassword":"xxxxxxxx",
+                        "CCServerAddress":"VCCADDRESS",
+                        "CCRepoName":"VCC_USERNAME",
                 },
         "VBRCredentials": {
                         "VBRServer":"192.168.1.231",
-                        "Username":"vagrant",
-                        "Password":"vagrant"
+                        "Username":"USERNAME",
+                        "Password":"PASSWORD"
                 },
         "VMCCredentials": {
                         "vCenter":"lab-vc-01.sliema.lab",
-                        "Username":"administrator@sliema.sso",
-                        "Password":"Password$123"
+                        "Username":"USERNAME",
+                        "Password":"PASSWORD"
                 },
         "VBRJobDetails": {
                         "DefaultRepo1":"Default Backup Repository",
