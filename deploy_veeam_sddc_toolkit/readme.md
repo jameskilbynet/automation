@@ -45,6 +45,7 @@ The Terraform templates included in this repository requires Terraform to be ava
 All of the variables are configured in the config.json file. Nothing is required to be changed in the main depply script.
 
     {
+<<<<<<< HEAD
     "Default": {
             "Path":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit",
             "ChefPath":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit\\veeam_standalone_full\\",
@@ -63,6 +64,20 @@ All of the variables are configured in the config.json file. Nothing is required
             "LocalRepoName":"LINUX-REPO-01",
             "LocalUsername":"root",
             "LocalPassword":"Veeam1!"
+=======
+        "Default": {
+                        "Path":"C:\\veeam_aws_vmc_2509\\",
+                        "ChefPath":"C:\\veeam_aws_vmc_2509\\veeam_standalone_full\\",
+                        "TFOutputVBR":"C:\\veeam_aws_vmc_2509\\vbr_ip.json"
+                },
+        "LinuxRepo": {
+                        "VBRServer":"localhost",
+                        "IpAddress":"",
+                        "Username": "centos",
+                        "Key":"C:\\veeam_aws_vmc_2509\\KEY-VEEAM-03.pem",
+                        "RepoName":"AWS-US-1-REPO-01",
+                        "RepoFolder":"/home/repo01"
+>>>>>>> e4cc575462c28b8bfd66c31211893b59aa65fbd4
                 },
         "VCCProvider": {
                         "VBRServer":"VBRSERVER",
