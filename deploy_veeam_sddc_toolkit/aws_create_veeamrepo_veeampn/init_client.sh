@@ -171,7 +171,6 @@ function ovpn_delete_client
 }
 
 
-
 function ovpn_download_file
 {
     CLI_ID=$(check_val "$1" "Need client id")
