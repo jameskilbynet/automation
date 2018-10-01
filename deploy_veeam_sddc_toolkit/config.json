@@ -1,42 +1,48 @@
 {
     "Default": {
-        "Path":"C:\\",
-        "ChefPath":"C:\\veeam_standalone_full\\",
-        "TFOutputVBR":"C:\\vbr_ip.json"
-    },
+            "Path":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit",
+            "ChefPath":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit\\veeam_standalone_full\\",
+            "TFOutputVBR":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit\\vbr_ip.json",
+            "AWSDeployPath":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit\\aws_create_veeamrepo_veeampn\\",
+            "LinuxRepoBuildPath":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit\\veeam_linux_repo\\",
+            "LinuxRepoIP":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit\\ip.json"
+        },
     "LinuxRepo": {
             "VBRServer":"localhost",
             "IpAddress":"",
             "Username": "centos",
-            "Key":"C:\\AWS-KEY.pem",
+            "Key":"C:\\Users\\anthonyspiteri\\Documents\\automation\\deploy_veeam_sddc_toolkit\\aws_create_veeamrepo_veeampn\\KEY-VEEAM-03.pem",
             "RepoName":"AWS-US-1-REPO-01",
-            "RepoFolder":"/home/repo01"
+            "RepoFolder":"/home/repo01",
+            "LocalRepoName":"LINUX-REPO-01",
+            "LocalUsername":"root",
+            "LocalPassword":"Veeam1!"
         },
     "VCCProvider": {
-            "VBRServer":"VBRSERVER",
+            "VBRServer":"192.168.1.55",
             "vCenterServer":"VCENTER",
             "vCenterDVS":"LAB-DVS-00",
             "vCenterPortGroup":"VM-Management",
             "vCenterDatastore":"HDD-1",
             "vCenterResPool":"SDDC",
-            "ESXiHost":"ESXIHOST",
+            "ESXiHost":"ESXiHOST",
             "CCUserName":"VCC_USERNAME",
-            "CCPassword":"xxxxxxxx",
-            "CCServerAddress":"VCCADDRESS",
-            "CCRepoName":"VCC_USERNAME",
+            "CCPassword":"VCC_PASSWORD",
+            "CCServerAddress":"VCC_ENDPOINT",
+            "CCRepoName":"VCC_REPO",
             "CCPort":"6180",
             "NEAIPAddress":"192.168.1.239",
             "NEASubnetMask":"255.255.255.0",
             "NEAGateway":"192.168.1.254"
         },
     "VBRCredentials": {
-            "VBRServer":"VBRSERVER",
+            "VBRServer":"VBRIP",
             "Username":"USERNAME",
             "Password":"PASSWORD"
         },
     "VMCCredentials": {
             "vCenter":"VCENTER",
-            "Username":"USERNAME",
+            "Username":"administrator@vsphere.local",
             "Password":"PASSWORD"
         },
     "VBRJobDetails": {

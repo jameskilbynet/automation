@@ -1,24 +1,24 @@
 
 # vCenter FQDN or IP to which the systems will be deployed.
-vsphere_server         = "192.168.1.69"
+vsphere_server         = "VCENTER"
 
 # vCenter Username with privileges to deploy machines
-vsphere_user           = ""
+vsphere_user           = "administrator@vsphere.local"
 
 # vCenter Password of User selected
-vsphere_password       = ""
+vsphere_password       = "PASSWORD"
 
 # vSphere Datacenter Name to which the systems will be deployed.
-datacenter             = "LAB-DC-01"
+datacenter             = "VC03"
 
 # vSphere Cluster or Resource Pool to which the systems will be deployed.
-vsphere_resource_pool  = "SDDC"
+vsphere_resource_pool  = "TPM03-AS"
 
 # vSphere Virtual Machine Network to which the systems will be attached.
-vsphere_network_name   = "VM-Management"
+vsphere_network_name   = "TPM03-730"
 
 # vSphere Full Template Path from which the systems will be deployed.  Must include any vSphere folder names e.g Templates/windows_2016
-veeam_template_path    = "WIN2K16-TEMPLATE"
+veeam_template_path    = "TPM03-AS/TPM03-WIN2016-TEMPLATE"
 
 # Total number of vCPUs to assign to Veeam VBR Server
 vbr_cpu_count          =  2
@@ -40,22 +40,22 @@ proxy_memory_size_mb   = 4096
 should_register_proxy  = true
 
 # vSphere Folder to which the systems will be deployed.  Must exist prior to execution.
-veeam_deployment_folder= "SDDC"
+veeam_deployment_folder= "TPM03-AS"
 
 # Username for Remote Windows Management Connections.  Must be in Domain\\username or username (for local accounts) format.
-vbr_admin_user             = ""
+vbr_admin_user             = "USERNAME"
 
 # Password for Remote Windows Management Connections
-vbr_admin_password         = ""
+vbr_admin_password         = "PASSWORD"
 
 # Username for Remote Windows Management Connections.  Must be in Domain\\username or username (for local accounts) format.
-proxy_admin_user       = ""
+proxy_admin_user       = "USERNAME"
 
 # Password for Remote Windows Management Connections
-proxy_admin_password   = ""
+proxy_admin_password   = "PASSWORD"
 
 # FQDN domain name
-domain_name            = "sliema.sso"
+domain_name            = "aperaturelabs.biz"
 
 # Enter the hostname to give to the Veeam Backup and Replication Server.  Should be less than 16 characters.
 veeam_server_name      = "SDDC-VBR-01"

@@ -19,19 +19,18 @@ variable "VeeamRepoAMIImage" {
 }
 
 # This will Prompt you for AWS Access and Secret Key
-variable "aws_access_key{}"
-varibale "aws_secret_key{}"
+#variable "aws_access_key{}"
+#varibale "aws_secret_key{}"
 
 # To hard code AWS Access and Secret Key comment above and uncomment below
-#variable "aws_access_key" {
-#  default = ""
-#  description = "User aws access key"
-#}
-#variable "aws_secret_key" {
-#  default = ""
-#  description = "User aws secret key"
-#}
-
+variable "aws_access_key" {
+  default = "AWS_ACCESS"
+  description = "User aws access key"
+}
+variable "aws_secret_key" {
+  default = "AWS_SECRET"
+  description = "User aws secret key"
+}
 variable "vpc-ipv4-cidr" {
   default = "10.0.100.0/24"
   description = "The VPC ipv4 CDIR"

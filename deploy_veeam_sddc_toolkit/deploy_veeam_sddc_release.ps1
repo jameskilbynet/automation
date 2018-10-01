@@ -26,14 +26,14 @@ deploy_veeam_sddc_release.ps1
 
         [Parameter(Mandatory=$false,
         ValueFromPipelineByPropertyName=$true)]
-        [Switch]$RunLinuxRepoDeploy,
+        [Switch]$LocalLinuxRepoDeploy,
 
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true)]
         [Switch]$ClearVBRConfig
     )
 
-if (!$RunAll -and !$RunVBRDeployOnly -and !$RunAWSDeploy -and !$RunVBRConfigure -and !$RunLinuxRepoDeploy -and !$ClearVBRConfig)
+if (!$RunAll -and !$RunVBRDeployOnly -and !$RunAWSDeploy -and !$RunVBRConfigure -and !$LocalLinuxRepoDeploy -and !$ClearVBRConfig)
     {
         Write-Host ""
         Write-Host ":: - ERROR! Script was run without using a parameter..." -ForegroundColor Red -BackgroundColor Black
@@ -86,8 +86,24 @@ function Run-TerraformChefBuild
 
 function Run-TerraformAWSBuild 
     {
+        $host.ui.RawUI.WindowTitle = "Creating AWS VPC and a Veeam Linux Repo plus Veeam PN instance with Terraform"
+        
+        $wkdir = Get-Location
+        Set-Location -Path $config.Default.AWSDeployPath
         & .\terraform.exe apply -auto-approve
-        & .\terraform.exe output -json private_ip_VeeamRepo > ip.json
+        & .\terraform.exe output -json private_ip_VeeamRepo > $config.Default.LinuxRepoIP
+        Set-Location $wkdir
+    }
+
+function Run-LinuxRepoBuild
+    {
+        $host.ui.RawUI.WindowTitle = "Deploying Local Veeam Linux Repo with Terraform"
+        
+        $wkdir = Get-Location
+        Set-Location -Path $config.Default.LinuxRepoBuildPath
+        & .\terraform.exe apply -auto-approve
+        & .\terraform.exe output -json vsphere_ipv4_address > $config.Default.LinuxRepoIP
+        Set-Location $wkdir
     }
 
 function Connect-VBR-Server
@@ -127,29 +143,58 @@ function Add-Linux-Repo
 
         Start-Sleep 5
         #Get AWS EC2 Repo Internal IP from Terraform output
-        $AWSIPAddress = Get-Content ip.json | ConvertFrom-json 
+        $IPAddress = Get-Content $config.Default.LinuxRepoIP | ConvertFrom-json 
 
         #Get Variables from Master Config
         $config = Get-Content config.json | ConvertFrom-Json
 
-        #Add Linux Public Key Credential
-        Add-VBRCredentials -Type LinuxPubKey -User $config.LinuxRepo.Username -PrivateKeyPath $config.LinuxRepo.Key -Password "" -ElevateToRoot | Out-Null
+        if (!$LocalLinuxRepoDeploy)
+            {
+                #Add Linux Public Key Credential
+                Add-VBRCredentials -Type LinuxPubKey -User $config.LinuxRepo.Username -PrivateKeyPath $config.LinuxRepo.Key -Password "" -ElevateToRoot | Out-Null
 
-        #Get Linux Credential
-        $LinuxCredential = Get-VBRCredentials -Name $config.LinuxRepo.Username
+                #Get Linux Credential
+                $LinuxCredential = Get-VBRCredentials -Name $config.LinuxRepo.Username
 
-        #Add Linux Instance to Backup & Replication
-        Write-Host ":: Adding Linux Server to Backup & Replication" -ForegroundColor Green
-        Add-VBRLinux -Name $AWSIPAddress.value -Description "Linux Repository" -Credentials $LinuxCredential -WarningAction SilentlyContinue | Out-Null
+                #Add Linux Instance to Backup & Replication
+                Write-Host ":: Adding Linux Server to Backup & Replication" -ForegroundColor Green
+                Add-VBRLinux -Name $IPAddress.value -Description "AWS Linux Repository" -Credentials $LinuxCredential -WarningAction SilentlyContinue | Out-Null
 
-        #Add Linux Repository to Backup & Replication
-        Write-Host ":: Creating New Linux Backup Repository" -ForegroundColor Green
-        Add-VBRBackupRepository -Name $config.LinuxRepo.RepoName -Description "AWS Linux Repository" -Type LinuxLocal -Server $AWSIPAddress.value -Folder $config.LinuxRepo.RepoFolder -Credentials $LinuxCredential | Out-Null
-    }
+                #Add Linux Repository to Backup & Replication
+                Write-Host ":: Creating New Linux Backup Repository" -ForegroundColor Green
+                Add-VBRBackupRepository -Name $config.LinuxRepo.RepoName -Description "AWS Linux Repository" -Type LinuxLocal -Server $IPAddress.value -Folder $config.LinuxRepo.RepoFolder -Credentials $LinuxCredential | Out-Null
+            }
+
+        if ($LocalLinuxRepoDeploy)
+            {
+               #Add Linux Public Key Credential
+               Add-VBRCredentials -Type Linux -User $config.LinuxRepo.LocalUsername -Password $config.LinuxRepo.LocalPassword -ElevateToRoot -Description $config.LinuxRepo.LocalRepoName  | Out-Null
+
+               #Get Linux Credential
+               $LinuxCredential = Get-VBRCredentials | where {$_.Description -eq $config.LinuxRepo.LocalRepoName}
+
+               #Add Linux Instance to Backup & Replication
+               Write-Host ":: Adding Linux Server to Backup & Replication" -ForegroundColor Green
+               Add-VBRLinux -Name $IPAddress.value -Description "Local Linux Repository" -Credentials $LinuxCredential -WarningAction SilentlyContinue | Out-Null
+
+               #Add Linux Repository to Backup & Replication
+               Write-Host ":: Creating New Linux Backup Repository" -ForegroundColor Green
+               Add-VBRBackupRepository -Name $config.LinuxRepo.LocalRepoName -Description "Local Linux Repository" -Type LinuxLocal -Server $IPAddress.value -Folder $config.LinuxRepo.RepoFolder -Credentials $LinuxCredential | Out-Null 
+            }
+        }
 
 function Create-VBRJobs
     {   
         $host.ui.RawUI.WindowTitle = "Creating vCenter Tags and Veeam Backup & Replication Jobs"
+
+        if (!$LocalLinuxRepoDeploy) 
+            {
+                $LinuxRepoName = $config.LinuxRepo.RepoName
+            }
+        else 
+            {
+                $LinuxRepoName = $config.LinuxRepo.LocalRepoName    
+            }
         
         Connect-VIServer -Server $config.VMCCredentials.vCenter -User $config.VMCCredentials.Username -Password $config.VMCCredentials.Password -Force | Out-Null
         
@@ -163,7 +208,7 @@ function Create-VBRJobs
         New-Tag -Name $config.VBRJobDetails.Tag3 -Category $config.VBRJobDetails.TagCatagory1 | Out-Null
         
         Write-Host ":: Creating Tag Based Policy Backup Job 1" -ForegroundColor Green
-        Add-VBRViBackupJob -Name $config.VBRJobDetails.Job2 -BackupRepository $config.LinuxRepo.RepoName -Entity (Find-VBRViEntity -Tags -Name $config.VBRJobDetails.Tag2) | Out-Null
+        Add-VBRViBackupJob -Name $config.VBRJobDetails.Job2 -BackupRepository $LinuxRepoName -Entity (Find-VBRViEntity -Tags -Name $config.VBRJobDetails.Tag2) | Out-Null
         Write-Host ":: Creating Tag Based Policy Backup Job 2" -ForegroundColor Green
         Add-VBRViBackupJob -Name $config.VBRJobDetails.Job3 -BackupRepository $config.VCCProvider.CCRepoName -Entity (Find-VBRViEntity -Tags -Name $config.VBRJobDetails.Tag3) | Out-Null
         
@@ -197,7 +242,7 @@ function ClearVBRConfig
         Connect-VBR-Server
         
         $config = Get-Content config.json | ConvertFrom-Json
-        $AWSIPAddress = Get-Content ip.json | ConvertFrom-json
+        $IPAddress = Get-Content $config.Default.LinuxRepoIP | ConvertFrom-json
         $ChefVBR = Get-Content vbr_ip.json | ConvertFrom-Json
 
         #Clear Jobs
@@ -207,7 +252,8 @@ function ClearVBRConfig
 
         #Clear Linux Repo and Server
         Get-VBRBackupRepository -Name $config.LinuxRepo.RepoName | Remove-VBRBackupRepository -Confirm:$false -WarningAction SilentlyContinue | Out-Null
-        Get-VBRServer -Type Linux -Name $AWSIPAddress.value | Remove-VBRServer -Confirm:$false -WarningAction SilentlyContinue | Out-Null
+        Get-VBRBackupRepository -Name $config.LinuxRepo.LocalRepoName | Remove-VBRBackupRepository -Confirm:$false -WarningAction SilentlyContinue | Out-Null
+        Get-VBRServer -Type Linux -Name $IPAddress.value | Remove-VBRServer -Confirm:$false -WarningAction SilentlyContinue | Out-Null
 
         #Clear Cloud Connect Provider
         Get-VBRCloudProvider -Name $config.VCCProvider.CCServerAddress | Remove-VBRCloudProvider -Confirm:$false -WarningAction SilentlyContinue | Out-Null
@@ -219,6 +265,7 @@ function ClearVBRConfig
         Get-VBRCredentials -Name $config.VMCCredentials.Username | Remove-VBRCredentials -Confirm:$false -WarningAction SilentlyContinue | Out-Null
         Get-VBRCredentials -Name $config.VCCProvider.CCUserName | Remove-VBRCredentials -Confirm:$false -WarningAction SilentlyContinue | Out-Null
         Get-VBRCredentials -Name $config.LinuxRepo.Username | Remove-VBRCredentials -Confirm:$false -WarningAction SilentlyContinue | Out-Null
+        Get-VBRCredentials | where {$_.Description -eq $config.LinuxRepo.LocalRepoName} | Remove-VBRCredentials -Confirm:$false -WarningAction SilentlyContinue | Out-Null
 
         #Clear vCenter Tags
         get-tag $config.VBRJobDetails.Tag1 | Remove-Tag -Confirm:$false | Out-Null
@@ -243,16 +290,29 @@ if ($RunAll){
     Write-Host "Execution Time" $durationCF -ForegroundColor Green -BackgroundColor Black
     Write-Host ""
     
-    #Pause
-    
-    $StartTimeRT = Get-Date
-    Run-TerraformAWSBuild
-    Write-Host ""
-    Write-Host ":: - AWS Repository and VeeamPN SiteGateway Deployed - ::" -ForegroundColor Green -BackgroundColor Black
-    $EndTimeRT = Get-Date
-    $durationRT = [math]::Round((New-TimeSpan -Start $StartTimeRT -End $EndTimeRT).TotalMinutes,2)
-    Write-Host "Execution Time" $durationRT -ForegroundColor Green -BackgroundColor Black
-    Write-Host ""
+    if (!$LocalLinuxRepoDeploy)
+        {
+            $StartTimeRT = Get-Date
+            Run-TerraformAWSBuild
+            Write-Host ""
+            Write-Host ":: - AWS Repository and VeeamPN SiteGateway Deployed - ::" -ForegroundColor Green -BackgroundColor Black
+            $EndTimeRT = Get-Date
+            $durationRT = [math]::Round((New-TimeSpan -Start $StartTimeRT -End $EndTimeRT).TotalMinutes,2)
+            Write-Host "Execution Time" $durationRT -ForegroundColor Green -BackgroundColor Black
+            Write-Host "" 
+        }
+
+    if ($LocalLinuxRepoDeploy)
+        {
+            $StartTimeRT = Get-Date
+            Run-LinuxRepoBuild
+            Write-Host ""
+            Write-Host ":: - Local Veema Linux Repository Deployed - ::" -ForegroundColor Green -BackgroundColor Black
+            $EndTimeRT = Get-Date
+            $durationRT = [math]::Round((New-TimeSpan -Start $StartTimeRT -End $EndTimeRT).TotalMinutes,2)
+            Write-Host "Execution Time" $durationRT -ForegroundColor Green -BackgroundColor Black
+            Write-Host "" 
+        }
     
     $StartTimeVB = Get-Date
     Connect-VBR-Server
@@ -314,12 +374,25 @@ if ($RunVBRDeployOnly){
 }
 
 if ($RunAWSDeploy){
-    #Rune the code for AWS Deploy and VBR Configure
+    #Rune the code for AWS Deploy
 
     $StartTimeRT = Get-Date
     Run-TerraformAWSBuild
     Write-Host ""
     Write-Host ":: - AWS Repository and VeeamPN SiteGateway Deployed - ::" -ForegroundColor Green -BackgroundColor Black
+    $EndTimeRT = Get-Date
+    $durationRT = [math]::Round((New-TimeSpan -Start $StartTimeRT -End $EndTimeRT).TotalMinutes,2)
+    Write-Host "Execution Time" $durationRT -ForegroundColor Green -BackgroundColor Black
+    Write-Host ""
+}
+
+if ($LocalLinuxRepoDeploy -and $RunVBRConfigure){
+    #Run the code for Local Linux Deploy
+
+    $StartTimeRT = Get-Date
+    Run-LinuxRepoBuild
+    Write-Host ""
+    Write-Host ":: - Local Veema Linux Repository Deployed - ::" -ForegroundColor Green -BackgroundColor Black
     $EndTimeRT = Get-Date
     $durationRT = [math]::Round((New-TimeSpan -Start $StartTimeRT -End $EndTimeRT).TotalMinutes,2)
     Write-Host "Execution Time" $durationRT -ForegroundColor Green -BackgroundColor Black
@@ -355,7 +428,7 @@ if ($RunVBRConfigure){
     $durationVCC = [math]::Round((New-TimeSpan -Start $StartTimeVCC -End $EndTimeVCC).TotalMinutes,2)
     Write-Host "Execution Time" $durationVCC -ForegroundColor Green -BackgroundColor Black
     Write-Host ""
-    
+      
     $StartTimeLR = Get-Date
     Add-Linux-Repo
     Write-Host ""
@@ -385,28 +458,6 @@ if ($ClearVBRConfig){
     $EndTimeCL = Get-Date
     $durationCL = [math]::Round((New-TimeSpan -Start $StartTimeCL -End $EndTimeCL).TotalMinutes,2)
     Write-Host "Execution Time" $durationCL -ForegroundColor Green -BackgroundColor Black
-    Write-Host ""
-}
-
-if ($RunLinuxRepoDeploy){
-    #Run the code for Add LinuxRepo
-
-    $StartTimeVB = Get-Date
-    Connect-VBR-Server
-    Write-Host ""
-    Write-Host ":: - Connected to Backup & Replication Server - ::" -ForegroundColor Green -BackgroundColor Black
-    $EndTimeVB = Get-Date
-    $durationVB = [math]::Round((New-TimeSpan -Start $StartTimeVB -End $EndTimeVB).TotalMinutes,2)
-    Write-Host "Execution Time" $durationVB -ForegroundColor Green -BackgroundColor Black
-    Write-Host ""
-    
-    $StartTimeLR = Get-Date
-    Add-Linux-Repo
-    Write-Host ""
-    Write-Host ":: - Veeam Linux Repository Configured - ::" -ForegroundColor Green -BackgroundColor Black
-    $EndTimeLR = Get-Date
-    $durationLR = [math]::Round((New-TimeSpan -Start $StartTimeLR -End $EndTimeLR).TotalMinutes,2)
-    Write-Host "Execution Time" $durationLR -ForegroundColor Green -BackgroundColor Black
     Write-Host ""
 }
 
