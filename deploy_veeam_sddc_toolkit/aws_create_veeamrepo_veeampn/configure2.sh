@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 sudo yum update -yum
 sudo yum install -y perl perl-Data-Dumper
 sudo groupadd repos;
